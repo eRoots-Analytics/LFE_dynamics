@@ -92,14 +92,15 @@ This guide and the supporting files are kept together in the **LFE_dynamics** re
 
 Download or clone the repository shared for the session, keeping its folder structure. See the [README](README.md) for access to VeraGrid on a local machine or the workshop browser desktop. If using the browser desktop, make the case files available in that desktop's filesystem before opening them in VeraGrid.
 
-| Repository file | Purpose |
-|---|---|
-| [system/LFE_HVDC_static.veragrid](system/LFE_HVDC_static.veragrid) | Starting network: open this file and save a personal working copy |
+| Repository file                                                              | Purpose                                                                                      |
+|------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------|
+| [system/LFE_HVDC_static.veragrid](system/LFE_HVDC_static.veragrid)           | Starting network: open this file and save a personal working copy                            |
 | [system/LFE_HVDC_RMScomplete.veragrid](system/LFE_HVDC_RMScomplete.veragrid) | Completed reference: inspect its device models if you need to check a connection or catch up |
-| [pics/example_hvdcLFE.png](pics/example_hvdcLFE.png) | Static network topology |
-| [pics/vsc_structure.png](pics/vsc_structure.png) | Functional overview of VSC1 and its control loops |
-| [pics/general_structure_hvdc.png](pics/general_structure_hvdc.png) | Top-level structure to assemble for VSC1 |
-| [pics/control_scheme_veragrid.png](pics/control_scheme_veragrid.png) | Control scheme to assemble inside VSC1's `Generic` block |
+| [pics/example_hvdcLFE.png](pics/example_hvdcLFE.png)                         | Static network topology                                                                      |
+| [pics/vsc_structure.png](pics/vsc_structure.png)                             | Functional overview of VSC1 and its control loops                                            |
+| [pics/general_structure_hvdc.png](pics/general_structure_hvdc.png)           | Top-level structure to assemble for VSC1                                                     |
+| [pics/control_scheme_veragrid.png](pics/control_scheme_veragrid.png)         | Control scheme to assemble inside VSC1's `Generic` block                                     |
+| [LFE_HVDC_system_RMS.py](LFE_HVDC_system_RMS.py)                   | Script with the same exact system and simulations created through the VeraGrid API.          |
 
 Keep the supplied cases unchanged and save your work under a different filename. The completed case includes an event and saved study results; these do not replace running the studies on your own assembled model. If you use it to catch up, remove its event from your working copy before the first, undisturbed RMS run.
 
@@ -109,10 +110,6 @@ Keep the supplied cases unchanged and save your work under a different filename.
 
 At the end of the session, participants should be able to:
 
-- distinguish an AC bus from a DC bus in VeraGrid;
-- identify the devices and connections of the supplied point-to-point HVDC network;
-- select compatible converter controls for an AC/DC power flow;
-- understand why one HVDC terminal regulates DC voltage and the other regulates active power;
 - import RMS templates through **Add default catalogue** and assign them to devices;
 - drag and connect complete device blocks in the RMS editor;
 - assemble VSC1 from smaller blocks and understand the hierarchy inside `Generic`;
@@ -132,26 +129,6 @@ The network is symmetrical at both terminals. The detailed connection order is:
 
 *Figure 1. Static point-to-point HVDC network supplied for the session.*
 
-The tables retain descriptive identifiers from the original guide. Use the following mapping to find the actual objects in the supplied files; no renaming is required.
-
-| Guide identifier | Name in the supplied files |
-|---|---|
-| `Bus_Grid_1`, `Bus_VSC_1`, `Bus_DC_1` | `Bus1_grid`, `Bus1_vsc`, `Bus1_dc` |
-| `Bus_Grid_2`, `Bus_VSC_2`, `Bus_DC_2` | `Bus2_grid`, `Bus2_vsc`, `Bus2_dc` |
-| `Generator_Grid_1`, `Generator_Grid_2` | `gen@Bus 0`, `gen@Bus 5` |
-| `TrafoGFL_1`, `TrafoGFL_2` | Both named `Transformer`; distinguish them by their connected buses |
-| `VSC_1` / VSC1, `VSC_2` / VSC2 | `VSC 1`, `VSC 2` |
-| `HVDC_Line` | `Dc line 1` |
-
-The device directions in the supplied network are:
-
-| Device | `from` bus | `to` bus |
-|---|---|---|
-| `TrafoGFL_1` | `Bus_Grid_1` | `Bus_VSC_1` |
-| `VSC_1` | `Bus_DC_1` | `Bus_VSC_1` |
-| `HVDC_Line` | `Bus_DC_1` | `Bus_DC_2` |
-| `VSC_2` | `Bus_DC_2` | `Bus_VSC_2` |
-| `TrafoGFL_2` | `Bus_VSC_2` | `Bus_Grid_2` |
 
 For a VeraGrid `VSC`, the positive DC terminal is always the `from` side and the AC terminal is always the `to` side. The GUI may correct a reversed drawing automatically, but the final properties must still be checked.
 
