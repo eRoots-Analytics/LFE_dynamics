@@ -2,7 +2,7 @@
 
 ![VeraGrid_banner.png](pics/VeraGrid_banner.png)
 
-# ACDC power flow & ACOPF tutorial
+# Dynamic simulations and Small-Signal analysis tutorial
 
 Here you will find all the information and related files for the hands-on tutorial on Dynamic Simulations using VeraGrid, our open-source Software.
 
