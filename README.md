@@ -77,6 +77,6 @@ On the workshop day we’ll provide:
 
 **Notes**
 
-* We’ll share your exact seat link and password at the start of the session.
-* If the browser page looks idle/blank, refresh the page and re-enter the password.
+* We’ll share your exact seat link at the start of the session.
+* If the browser page looks idle/blank, refresh the page and re-enter.
 * All you need is a modern browser; no local Python install required.
