@@ -55,21 +55,12 @@ python3`` -c "from VeraGrid.ExecuteVeraGrid import runVeraGrid;runVeraGrid()"
 On the workshop day we’ll provide:
 
 * a link like `https://35.233.62.237.sslip.io/seat1/`
-* a per-seat password `seat1pass`
+* a seat number
 
 **Steps**
-1. Open the link we provide (e.g., `https://<WORKSHOP URL>/seatX/`) in Chrome/Firefox and click `noVNC Full Client`
-![noVNC](pics/noVNC_landing.png)
-2. Open the link we provide (e.g., `https://<WORKSHOP URL>/seatX/`) in Chrome/Firefox.
-![noVNC](pics/noVNC.png)
-3. Enter the password we provide on the day.
-![noVNC_creds](pics/noVNC_creds.png)
-4. You’ll see a Linux desktop in your browser. Open a terminal
-![noVNC_linux](pics/noVNC_linux.png)
-   * Menu → **Applications → Terminal Emulator** (or right-click desktop → **Open Terminal**).
-   
-5. Launch the GUI:
-![noVNC_linux](pics/noVNC_terminal.png)
+1. Open the link we provide (e.g., `https://<WORKSHOP URL>/seatX/`) in Chrome/Firefox, doubleclick in the seat number provided in Veragrid Workshop Room Selection. Ennter your name to register.
+![noVNC](pics/virtual_machine_room.png)
+
    ```bash
    veragrid
    ```
@@ -77,6 +68,6 @@ On the workshop day we’ll provide:
 
 **Notes**
 
-* We’ll share your exact seat link at the start of the session.
-* If the browser page looks idle/blank, refresh the page and re-enter.
+* We’ll share your exact seat at the start of the session.
+* If the browser page looks idle/blank, refresh the page and re-enter the password.
 * All you need is a modern browser; no local Python install required.

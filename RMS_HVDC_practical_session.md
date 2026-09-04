@@ -523,7 +523,7 @@ Do not add the event until this baseline is satisfactory. A drift or transient w
 
 ## 8. Add the RMS event and simulate again
 
-### 8.1. Create one RmsEvent on VSC2
+### 8.1. Create Rms Events on VSC2
 
 We will reduce **VSC2's dynamic Pref** from **0.20 to 0.19 p.u. at t = 5 s**. In the saved model the parameter is named **`P_ref`**. Select that dynamic parameter, not the static `control1_val` property.
 
@@ -544,10 +544,88 @@ We will reduce **VSC2's dynamic Pref** from **0.20 to 0.19 p.u. at t = 5 s**. In
 4. Inspect the saved record under **Database → Dynamic → RMS Event** and its **RMS Events Group**.
 5. Confirm that the group contains **only this one event** and save the circuit.
 
+
 ```text
 Pref(t) = 0.20 p.u.   for t < 5 s
 Pref(t) = 0.19 p.u.   for t >= 5 s
 ```
+
+We will increase **VSC2's dynamic Qref** from **0.0 to 0.02 p.u. at t = 5 s**. In the saved model the parameter is named **`Q_ref`**. Select that dynamic parameter.
+
+| Event property | Value                                        |
+|---|----------------------------------------------|
+| Device | `VSC 2` (`VSC_2` in this guide)              |
+| Event type/name | `RmsEvent`                                   |
+| Event group | Create/select `HVDC RMS Vdc control`         |
+| Parameter | `Q_ref` (Pref)                               |
+| Time | `5.0 s`                                      |
+| Transition | `Step`                                       |
+| New value | `0.02 p.u.`                                  |
+| Initial reference | `0.0 p.u.`, from the initial operating point |
+
+1. Select **VSC 2** and use its context-menu action to add an **RMS event**.
+2. Create or select the event group, and choose the VSC2 dynamic `Q_ref` parameter.
+3. Enter `time = 5.0`, `value = 0.02` and `Step`. If an end-time field is shown for the step, leave it equal to `5.0`.
+4. Inspect the saved record under **Database → Dynamic → RMS Event** and its **RMS Events Group**.
+5. Confirm that the group contains **only this one event** and save the circuit.
+
+
+```text
+Qref(t) = 0.0 p.u.   for t < 5 s
+Qref(t) = 0.02 p.u.   for t >= 5 s
+```
+
+We will increase **VSC1's dynamic Vdc_ref** from **1.0 to 1.01 p.u. at t = 5 s**. In the saved model the parameter is named **`Vdc_ref`**. Select that dynamic parameter.
+
+| Event property | Value                                        |
+|---|----------------------------------------------|
+| Device | `VSC 1` (`VSC_1` in this guide)              |
+| Event type/name | `RmsEvent`                                   |
+| Event group | Create/select `HVDC RMS Vdc control`         |
+| Parameter | `Vdc_ref` (Pref)                             |
+| Time | `5.0 s`                                      |
+| Transition | `Step`                                       |
+| New value | `1.01 p.u.`                                  |
+| Initial reference | `1.0 p.u.`, from the initial operating point |
+
+1. Select **VSC 1** and use its context-menu action to add an **RMS event**.
+2. Create or select the event group, and choose the VSC1 dynamic `Vdc_ref` parameter.
+3. Enter `time = 5.0`, `value = 1.01` and `Step`. If an end-time field is shown for the step, leave it equal to `5.0`.
+4. Inspect the saved record under **Database → Dynamic → RMS Event** and its **RMS Events Group**.
+5. Confirm that the group contains **only this one event** and save the circuit.
+
+
+```text
+Vdc_ref(t) = 1.0 p.u.   for t < 5 s
+Vdc_ref(t) = 0.01 p.u.   for t >= 5 s
+```
+
+We will increase **Gen grid2's dynamic Vg** from **0.98 to 1.0 p.u. at t = 5.2 s**. In the saved model the parameter is named **`Vg`**. Select that dynamic parameter.
+
+| Event property | Value                                         |
+|---|-----------------------------------------------|
+| Device | `Gen_grid2` (`Gen_grid2` in this guide)       |
+| Event type/name | `RmsEvent`                                    |
+| Event group | Create/select `HVDC RMS Vdc control`          |
+| Parameter | `Vg` (Pref)                                   |
+| Time | `5.2 s`                                       |
+| Transition | `Step`                                        |
+| New value | `1.0 p.u.`                                    |
+| Initial reference | `0.98 p.u.`, from the initial operating point |
+
+1. Select **VSC 1** and use its context-menu action to add an **RMS event**.
+2. Create or select the event group, and choose the Gen_grid2 dynamic `Vg` parameter.
+3. Enter `time = 5.2`, `value = 1.0` and `Step`. If an end-time field is shown for the step, leave it equal to `5.2`.
+4. Inspect the saved record under **Database → Dynamic → RMS Event** and its **RMS Events Group**.
+5. Confirm that the group contains **only this one event** and save the circuit.
+
+
+```text
+Vg(t) = 0.98 p.u.   for t < 5.2 s
+Vg(t) = 1.0 p.u.   for t >= 5.2 s
+```
+
+
 
 The event value is the **new absolute reference**, not the increment `-0.01`. On the 100 MVA base this is a reduction from 20 MW to 19 MW. Leave the static `Pdc` set point at **20 MW** to preserve the initial operating point. There is **no return step at 15 s** in this session.
 
