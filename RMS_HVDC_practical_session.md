@@ -403,103 +403,10 @@ The PLL uses the AC voltage magnitude and angle (`Vm`, `Va`) to obtain the rotat
 
 The next two figures show how to implement this structure in VeraGrid. Inspect `VSC 1` in [LFE_HVDC_RMScomplete.veragrid](system/LFE_HVDC_RMScomplete.veragrid) when you need to check a port or parameter.
 
-### 6.1. General VSC1 structure
 
-![Top-level VSC1 RMS structure: Generic control subsystem, DC-link capacitor and terminal-power equations](pics/general_structure_hvdc.png)
+## 6. Power flow and first RMS simulation
 
-*Figure 3. Top-level structure to assemble in the RMS editor of VSC1. The internals of `GENERIC_1` are shown in Figure 4.*
-
-1. Open the RMS editor for **VSC 1** and keep its network connection ports.
-2. Add a **Generic** block for the converter controls and electrical equations. Its interface must have inputs `Vdc`, `Vm`, `Va` and outputs `i_d`, `i_q`, `P`, `Q`.
-3. Add **DC-link capacitor** (`VSC_DC_LINK_RMS_1` in the figure).
-4. Add **VSC terminal power equations** (`VSC_TERMINAL_POWER_RMS_1` in the figure).
-5. Build the connections below. Then enter `Generic` and assemble its contents as described in Section 6.2.
-
-| Source | Destination |
-|---|---|
-| Network `Vm`, `Va` from the AC side of VSC1 | `Generic.Vm`, `Generic.Va` |
-| Network `Vdc` from the DC side of VSC1 | `Generic.Vdc`, DC-link `Vdc`, terminal-power `Vdc` |
-| `Generic.i_d`, `Generic.i_q` | DC-link `i_d`, `i_q` |
-| `Generic.P`, `Generic.Q` | Terminal-power `P`, `Q` |
-| DC-link `Vdc_state` | Terminal-power `Vdc_state` |
-| Terminal-power `Pf_vsc`, `Pt_vsc` | Corresponding VSC network power ports **and** DC-link `Pf_vsc`, `Pt_vsc` feedback inputs |
-| Terminal-power `Qt_vsc` | VSC AC-side reactive-power port |
-
-The DC-link block owns the capacitor state. The terminal-power block couples that state and the converter powers to the network. Keep network `Vdc` and capacitor `Vdc_state` as the separate signals shown in the figure; do not omit either connection or add a second capacitor model.
-
-The arrow-shaped named connectors in the figures route signals without long wires. They must refer to the same signal, not merely have similar labels. Direct wires are also valid if they preserve the connections above.
-
-### 6.2. Control scheme inside Generic
-
-![VSC1 Generic subsystem: PLL, electrical equations, Qac and Vdc outer controls, current limiter and two current PI controllers](pics/control_scheme_veragrid.png)
-
-*Figure 4. Contents of `GENERIC_1`. In this implementation, the Qac loop supplies the d-axis current reference and the Vdc loop supplies the q-axis reference.*
-
-Enter the `Generic` block's internal diagram and expose the three inputs and four outputs defined in Section 6.1. Use the contextual Library to add these seven functional blocks:
-
-| Library block | Name shown in the figure | Function/configuration for VSC1 |
-|---|---|---|
-| `PLL explicit PI` | `VSC_PLL_RMS_1` | Convert `Vm`, `Va` to `vd`, `vq`, `omega` in the converter frame |
-| `Converter electrical equations` | `VSC_ELECTRICAL_RMS_1` | Calculate converter currents and powers |
-| `Qac / Vac control` | `Qac / Vac control` | Set `control2 = Qac`; generate `i_d_ref` |
-| `Vdc / P control` | `Vdc / P control` | Set `control1 = Vm_dc`; generate `i_q_ref` |
-| `Current limiter` | `VSC_CURRENT_LIMITER_RMS_1` | Limit the two current references |
-| `d-axis current PI controller` | `VSC_VD_HAT_RMS_1` | Generate voltage correction `y_vd_hat` |
-| `q-axis current PI controller` | `VSC_VQ_HAT_RMS_1` | Generate voltage correction `y_vq_hat` |
-
-The PLL, outer controls, limiter and current PI blocks are in the **Controls** part of the VSC Library; the electrical and DC-link models are device blocks. The current PI controllers may retain the older `VD_HAT` / `VQ_HAT` names in saved figures. They regulate current; their outputs are voltage corrections, not voltage estimators.
-
-Connect the internal diagram in this order:
-
-1. **Synchronize:** connect `Generic.Vm` and `Generic.Va` to the PLL, then PLL outputs `vd`, `vq`, `omega` to the electrical-equations block.
-2. **Reactive-power loop:** connect electrical outputs `Q` and `i_d` to `Qac / Vac control`. Its output is `i_d_ref`.
-3. **DC-voltage loop:** connect `Generic.Vdc` and electrical output `i_q` to `Vdc / P control`. Its output is `i_q_ref`.
-4. **Current limiting:** connect `i_d_ref`, `i_q_ref` and measured `i_q` to the current limiter. Its outputs are `i_d_ref_sat` and `i_q_ref_sat`.
-5. **Inner current loops:** connect measured `i_d` and `i_d_ref_sat` to the d-axis PI; connect measured `i_q` and `i_q_ref_sat` to the q-axis PI.
-6. **Close the feedback:** connect `y_vd_hat` and `y_vq_hat` from the two PI controllers back to the electrical-equations block.
-7. **Expose the subsystem results:** connect electrical outputs `i_d`, `i_q`, `P`, `Q` to the corresponding `Generic` output ports. These are the signals consumed at the top level in Figure 3.
-
-Follow this model's axis convention exactly; do not swap the d/q paths based on assumptions from another converter model. Configure the outer-loop modes before finalizing their ports, since changing a mode can change its inputs and references.
-
-### 6.3. Parameters and initialization
-
-Check the following workshop values in the smaller blocks of VSC1 and the complete model of VSC2. Parameters belong to their respective blocks, so the two inner PI controllers must each have the listed current-loop gains.
-
-| Parameter | Value | Where it is used |
-|---|---:|---|
-| `Cdc` | 0.40 p.u. | DC-link capacitor of each VSC |
-| `Kp_vdc`, `Ki_vdc` | 0.20, 1.00 | VSC1 DC-voltage outer loop |
-| `Kp_pol`, `Ki_pol` | 0.02, 0.10 | Qac outer loops and VSC2 active-power loop |
-| `Kp_icl`, `Ki_icl` | 0.20, 5.00 | Each d-axis and q-axis current PI |
-| `R`, `L` | 0.00, 0.05 p.u. | Converter electrical equations; keep resistance zero to avoid duplicating transformer losses |
-| `Kp_pll`, `Ki_pll` | 0.001, 0.10 | PLL |
-| `fn` | 50 Hz | PLL nominal frequency |
-| Current limit (`Imax` in the smaller limiter block) | 1.20 p.u. | Current-reference limiter |
-| `a0`, `a1`, `a2` | 0.0 | Converter loss coefficients mapped from static `alpha1`, `alpha2`, `alpha3` |
-
-The AC-voltage outer-loop mode is not used: both terminals use `Qac`. The active-axis mode is `Vm_dc` on VSC1 and `Pdc` on VSC2. In static GUI fields these control names may appear as `Q_ac` and `P_dc`; they refer to the same controls.
-
-| Dynamic reference | Initialization and use |
-|---|---|
-| `Vdc_ref` | Solved DC voltage; VSC1's voltage-control target |
-| `Q_ref` | Solved reactive power; zero target for both VSCs |
-| `P_ref` (called **Pref** in the session) | Solved converter active-power reference; initially `0.20 p.u.` for VSC2 and the target of our RMS event |
-
-Keep the template-provided power-flow mappings and initialization equations. Do not manually zero the controller integrator states: they must support the initial 20 MW transfer. An equilibrium initialization should not create a disturbance at `t = 0`.
-
-### 6.4. Validate and save the assembled system
-
-1. Review every connection inside `Generic`, then return to VSC1's top-level diagram and check Figure 3 again.
-2. Use the editor's validation action and resolve unconnected required inputs, missing mappings or invalid equations.
-3. Apply block-property changes, then save the **complete device model** back to VSC1. Applying one block's properties alone does not save the whole device model.
-4. Confirm the source models and VSC2 were also saved and that the transformers/DC line retain their assigned templates.
-5. Save the circuit as a checkpoint before running studies.
-
-**Checkpoint:** all seven non-bus devices now have their RMS models, VSC1 contains the two-level structure, and no disturbance event has yet been added to the working case.
-
-## 7. Power flow and first RMS simulation
-
-### 7.1. Run Power Flow
+### 6.1. Run Power Flow
 
 After completing the dynamic model assembly, run **Power Flow** from VeraGrid. This solves the static operating point used to initialize the dynamic states.
 
@@ -516,7 +423,7 @@ Check that the power flow converges, VSC1's DC voltage is approximately `1.0 p.u
 
 If you edit static network data later, rerun Power Flow before the dynamic studies. Opening saved power-flow results is not a substitute for solving your current working case.
 
-### 7.3. Add RMS events group
+### 6.3. Add RMS events group
 
 Add an events group to the simulation. Go to **Events → Add RMS event **. Select any device in the devices tree of the right side and click in the RMS event button.
 
@@ -526,7 +433,7 @@ Click on **Create Event Group** and add it.
 
    ![Add Events Group](pics/add_rms_events_group.png)
 
-### 7.4. Run RMS without an event
+### 6.4. Run RMS without an event
 
 Configure the RMS study as follows:
 
@@ -549,9 +456,9 @@ Set the tolerance explicitly to `1e-6`; if the GUI uses a decimal-precision sele
 
 Do not add the event until this baseline is satisfactory. A drift or transient without an event is a reason to check initialization, parameters and connections first.
 
-## 8. Add the RMS event and simulate again
+## 7. Add the RMS event and simulate again
 
-### 8.1. Create Rms Events on VSC2
+### 7.1. Create Rms Events on VSC2
 
 We will reduce **VSC2's dynamic Pref** from **0.20 to 0.19 p.u. at t = 5 s**. In the saved model the parameter is named **`P_ref`**. Select that dynamic parameter, not the static `control1_val` property.
 
@@ -569,7 +476,7 @@ We will reduce **VSC2's dynamic Pref** from **0.20 to 0.19 p.u. at t = 5 s**. In
 1. Select **VSC 2** and use its context-menu action to add an **RMS event**.
 2. Create or select the event group, and choose the VSC2 dynamic `P_ref` parameter.
 3. Enter `time = 5.0`, `value = 0.19` and `Step`. If an end-time field is shown for the step, leave it equal to `5.0`.
-   ![Add RMS event](pics/add_rms_events_group.png)
+   ![Add RMS event](pics/add_rms_event.png)
 4. Inspect the saved record under **Database → Dynamic → RMS Event** and its **RMS Events Group**.
 5. Confirm that the group contains **only this one event** and save the circuit.
 
@@ -579,7 +486,7 @@ Pref(t) = 0.20 p.u.   for t < 5 s
 Pref(t) = 0.19 p.u.   for t >= 5 s
 ```
 
-### 8.2. Run RMS again and compare
+### 7.2. Run RMS again and compare
 
 1. Keep the numerical settings from Section 7.2 and include the `HVDC RMS Vdc control` event group in the RMS study.
 2. Run **RMS simulation** again from the original power-flow operating point.
@@ -589,11 +496,11 @@ Pref(t) = 0.19 p.u.   for t >= 5 s
 
 The second run starts at `t = 0`; it does not continue from the end of the first run. The reference remains at `0.19 p.u.` after the event for the rest of this simulation.
 
-## 9. Small-Signal RMS analysis
+## 8. Small-Signal RMS analysis
 
 After comparing the two RMS runs, run **Small-Signal RMS** to inspect the local modes of the assembled dynamic model.
 
-### 9.1. Select the operating point and run
+### 8.1. Select the operating point and run
 
 1. Keep the completed RMS models and a converged Power Flow for the original **20 MW** operating point.
 2. Set the RMS Small-Signal **assessment time to `0.0 s`** for this exercise. This selects the initialized equilibrium used before the event.
@@ -602,7 +509,7 @@ After comparing the two RMS runs, run **Small-Signal RMS** to inspect the local 
 
 Running this study after the disturbed RMS simulation does **not** automatically linearize its final, 19 MW state. With assessment time zero, the analysis is around the initial power-flow equilibrium. Studying a different equilibrium would require setting and solving that operating point explicitly; it is outside this session's required sequence.
 
-### 9.2. Read the modal results
+### 8.2. Read the modal results
 
 | Result | What to inspect |
 |---|---|
@@ -615,7 +522,7 @@ For a mode `lambda = sigma + j*omega`, a negative `sigma` means decay and a posi
 
 Select a weakly damped mode and inspect whether its participating states belong to a PLL, an outer control loop, an inner current loop, a DC-link capacitor or the DC-line current. Relate the modes to the transients seen in the event run, remembering that a small event may not visibly excite every mode. Record the results obtained; do not assume stability from a successful solver status alone.
 
-### 10 Complete vsc1 model using dynamic editor
+### 9 Complete vsc1 model using dynamic editor
 1. Open **HVDC_grid_noPLL.veragrid**
 1. Open VSC1's rms dynamic editor using the context menu
 2. Ctrl + click on the **HVDC GFL VSC explicit PI** block to enter the model.
@@ -625,7 +532,7 @@ Select a weakly damped mode and inspect whether its participating states belong 
 
    ![HVDC GFL VSC explicit PI blocks model](pics/complete_vsc1_model_with_pll.png)
 
-### 11 Try adding different events
+### 10 Try adding different events
 
 We will increase **VSC2's dynamic Qref** from **0.0 to 0.02 p.u. at t = 5 s**. In the saved model the parameter is named **`Q_ref`**. Select that dynamic parameter.
 
@@ -702,53 +609,7 @@ Vg(t) = 0.98 p.u.   for t < 5.2 s
 Vg(t) = 1.0 p.u.   for t >= 5.2 s
 ```
 
-
-
 The event value is the **new absolute reference**, not the increment `-0.01`. On the 100 MVA base this is a reduction from 20 MW to 19 MW. Leave the static `Pdc` set point at **20 MW** to preserve the initial operating point. There is **no return step at 15 s** in this session.
-
-
-## 9. Small-Signal RMS analysis
-
-After comparing the two RMS runs, run **Small-Signal RMS** to inspect the local modes of the assembled dynamic model.
-
-### 9.1. Select the operating point and run
-
-1. Keep the completed RMS models and a converged Power Flow for the original **20 MW** operating point.
-2. Set the RMS Small-Signal **assessment time to `0.0 s`** for this exercise. This selects the initialized equilibrium used before the event.
-3. Select **Small-Signal RMS** (RMS Small-Signal stability analysis), not the EMT Small-Signal study, and run it.
-4. Inspect the study log and open **Results → RMS Small-Signal stability**.
-
-Running this study after the disturbed RMS simulation does **not** automatically linearize its final, 19 MW state. With assessment time zero, the analysis is around the initial power-flow equilibrium. Studying a different equilibrium would require setting and solving that operating point explicitly; it is outside this session's required sequence.
-
-### 9.2. Read the modal results
-
-| Result | What to inspect |
-|---|---|
-| Eigenvalues | Real parts indicate growth or decay; imaginary parts indicate oscillation |
-| Oscillation frequencies | Identify the time scales of oscillatory modes |
-| Damping ratios | Identify the least damped oscillatory modes |
-| Participation factors | Identify which states contribute most strongly to a selected mode |
-
-For a mode `lambda = sigma + j*omega`, a negative `sigma` means decay and a positive `sigma` means growth in the linearized model. The oscillation frequency is `abs(omega)/(2*pi)` Hz. Near-zero modes need interpretation in the context of references and constraints rather than an automatic stable/unstable label.
-
-Select a weakly damped mode and inspect whether its participating states belong to a PLL, an outer control loop, an inner current loop, a DC-link capacitor or the DC-line current. Relate the modes to the transients seen in the event run, remembering that a small event may not visibly excite every mode. Record the results obtained; do not assume stability from a successful solver status alone.
-
-## 10. Results and expected response
-
-Use the same signals for both RMS runs. These are qualitative checks, not precomputed numerical acceptance limits.
-
-| Signals to plot | Baseline without events | Run with the VSC2 Pref step |
-|---|---|---|
-| `Vdc` at `Bus1_dc` and `Bus2_dc` | Approximately steady near 1.0 p.u. | VSC1 acts to restore its DC-voltage target after 5 s; the terminal voltages differ because of line resistance and current |
-| VSC2 `P_ref` and converter active power | Approximately 0.20 p.u. reference | Reference steps to 0.19 p.u.; power responds through the controller dynamics |
-| VSC1 and VSC2 terminal powers (`Pf_vsc`, `Pt_vsc` or `Pf`, `Pt`) | Steady transfer and losses | VSC1 adjusts its exchange to balance the link while VSC2 follows the changed reference |
-| Converter reactive power (`Qt_vsc` or `Qt`) | Close to zero | Remains near the zero target apart from the transient |
-| DC-line `If_dc`, `Pf`, `Pt` | Steady current magnitude near 0.20 p.u. | Current evolves dynamically because of `l_dc`; terminal powers change accordingly |
-| `Vm`, `Va` at `Bus1_grid` and `Bus2_grid` | Stiff voltage and angle references | Held by the voltage-source models while their limits are inactive |
-
-Power signs follow the terminal convention: `Pf = Vdcf * If_dc`, whereas `Pt = -Vdct * If_dc` for the DC line. Do not expect both terminal powers to have the same sign. At steady state, their sum accounts for resistive loss; during the transient, the line's stored energy also contributes to the power balance.
-
-If VSC2's reference changes but its power does not respond, inspect the event target, the selected result group, current limits and controller connections. If the baseline is already drifting, return to model and initialization checks before interpreting the step response.
 
 ## 11. Troubleshooting
 
