@@ -287,7 +287,8 @@ Only `R` is part of the static `DcLine` device. The series dynamic coefficient `
 
 1. Open `system/LFE_HVDC_static.veragrid` in VeraGrid and use **Save as** to create your working copy.
 2. Identify the devices using the topology and name mapping in Section 3.1.
-3. Check the data in Section 4, especially `Sbase = 100 MVA`, `fBase = 50 Hz`, the converter controls and `Dc line 1.R = 0.01 p.u.`.
+3. Check the data in Section 4 by selecting the static device and opening the properties table (especially check `Sbase = 100 MVA`, `fBase = 50 Hz`, the converter controls and `Dc line 1 R = 0.01 p.u.`).
+![Check properties screenshot](pics/check_properties.png)
 4. Confirm the object count below. Keep the existing network connections and the automatically supplied RMS connection shells.
 
 | Object type | Expected count |
@@ -315,12 +316,22 @@ The bus connection shells provide `Vm` and `Va` on AC buses and `Vdc` on DC buse
 
 ### 5.3. Add default catalogue and assign RMS templates
 
-1. Open **Actions → Add default catalogue**.
-2. Expand **RMS model templates**. Select **2W Transformer** and **DC line**, then accept the selection. These are dynamic templates; the separate **Transformer types** category contains static equipment data and is not the category used here.
-3. In the device properties/database table, assign the imported transformer template to the **`rms_template`** property of each transformer.
-4. Assign the imported `DC line` template to **`HVDC_Line.rms_template`** (`Dc line 1` in the file).
-5. Check the assignments and inspect their RMS models/terminal mappings. The transformer model must use the actual from/to buses; the DC-line model must use both DC terminal voltages.
-6. Save the working circuit.
+1. Open **Model → Add default catalogue**.
+2. Expand **RMS model templates**. Select **voltage_source**, **2W Transformer** and **DC line**, then accept the selection. These are dynamic templates; the separate **Transformer types** category contains static equipment data and is not the category used here.
+3. In the device properties/database table, assign the imported voltage source template to the **`rms_template`** property of each Generator. The voltage reference `Vg0` and angle reference `Ag0` initialize from power flow. The reference source has wide active/reactive limits, `Pmax_G = Qmax_G = 9.999 p.u.` and `Pmin_G = Qmin_G = -9.999 p.u.`; within those limits it holds the AC-grid voltage and angle fixed while power exchange follows the network.
+
+   ![Voltage source RMS assignment](pics/rms_model_assignment_voltage_source.png)
+
+4. In the device properties/database table, assign the imported transformer template to the **`rms_template`** property of each transformer.
+
+   ![Transformer RMS assignment](pics/rms_model_assignment_transformer.png)
+
+5. Assign the imported `DC line` template to **`HVDC_Line.rms_template`** (`Dc line 1` in the file).
+
+   ![DC line RMS assignment](pics/rms_model_assignement_cd_line.png)
+
+6. Check the assignments and inspect their RMS models/terminal mappings. The transformer model must use the actual from/to buses; the DC-line model must use both DC terminal voltages.
+7. Save the working circuit.
 
 **Importing a template only adds it to the circuit catalogue. Assigning `rms_template` connects that template to a particular device.** Complete both steps. Do not add another independent model to the same device on top of the assigned template.
 
@@ -328,12 +339,19 @@ The transformer template reads the static resistance/reactance and tap data and 
 
 ### 5.4. Single-block models in the RMS editor
 
-For each generator and for VSC2:
+For VSC1 and VSC2:
 
 1. Open the device's **RMS editor** from its context menu.
+
+
+   ![Open RMS model editor](pics/open_rms_editor.png)
+
 2. Keep the existing network connection ports.
-3. Drag the required complete model from the contextual **Library → Devices** branch.
+3. Drag the required complete model from the contextual **Library → Devices** Complete GFL VSC hvdc.
 4. Connect each input and output to the matching network port, using the signal names and terminal mappings rather than just the drawing position.
+
+   ![Add Complete GFL VSC hvdc model from library and connect ports](pics/add_model_from_library_and_connect.png)
+   
 5. Inspect **Block Properties**, apply the changes and save the complete model back to the device. Save the circuit too.
 
 Use the following connections:
@@ -345,11 +363,11 @@ Use the following connections:
 
 The VSC power signals may be labelled `Pf_vsc`, `Pt_vsc` and `Qt_vsc` in the diagram. Match them to their DC-from and AC-to terminal meanings.
 
-For **VSC2**, select `control1 = Pdc`, `control2 = Qac` and `cdc = 0.40` in the complete block's structural properties. Check the controller parameters in Section 6.3. In some saved diagrams the complete block is named `HVDC GFL VSC explicit PI`.
+For **VSC2**, open the model properties by double-clicking the block and select `control1 = Pdc`, `control2 = Qac` and `cdc = 0.40` in the General structure. Check the controller parameters in Section 6.3. In some saved diagrams the complete block is named `HVDC GFL VSC explicit PI`.
 
-For the **external grids**, use `Voltage source`, not a complete synchronous-generator model. The voltage reference `Vg0` and angle reference `Ag0` initialize from power flow. The reference source has wide active/reactive limits, `Pmax_G = Qmax_G = 9.999 p.u.` and `Pmin_G = Qmin_G = -9.999 p.u.`; within those limits it holds the AC-grid voltage and angle fixed while power exchange follows the network.
+   ![Adjust model properties](pics/adjust_vsc2_properties.png)
 
-**Checkpoint:** both transformers and the DC line have assigned templates; both grid sources and VSC2 have saved complete models. VSC1 remains to be built in Section 6.
+**Checkpoint:** Transformers, generators and the DC line have assigned templates; VSC2 and VSC1 have saved complete models.
 
 ### 5.5. DC-line model and parameter checks
 
@@ -373,7 +391,7 @@ The template maps `Vdcf` and `Vdct` to branch-side `Vmf` and `Vmt` references; t
 
 `r_dc` follows the static device resistance and must not be given an unrelated value. `l_dc` has no static-device counterpart and is edited in the dynamic model. It remains unchanged during our power-reference event.
 
-## 6. Build VSC1 from scratch with all the control blocks
+## 11. Complete VSC1 model in dynamic editor
 
 VSC1 uses the same physical control functions as a complete HVDC GFL VSC, but we will build the hierarchy ourselves. Start with the functional overview below before translating the control loops into RMS editor blocks.
 
@@ -498,18 +516,28 @@ Check that the power flow converges, VSC1's DC voltage is approximately `1.0 p.u
 
 If you edit static network data later, rerun Power Flow before the dynamic studies. Opening saved power-flow results is not a substitute for solving your current working case.
 
-### 7.2. Run RMS without an event
+### 7.3. Add RMS events group
+
+Add an events group to the simulation. Go to **Events → Add RMS event **. Select any device in the devices tree of the right side and click in the RMS event button.
+
+   ![Open events editor](pics/open_rms_events_editor.png)
+
+Click on **Create Event Group** and add it.
+
+   ![Add Events Group](pics/add_rms_events_group.png)
+
+### 7.4. Run RMS without an event
 
 Configure the RMS study as follows:
 
-| RMS option | Workshop setting |
-|---|---|
-| Simulation time | 30 s |
-| Time step | 0.002 s |
-| Integration method | DAE Backward Euler (`DAE_BackEuler`) |
-| Initialization method | Explicit |
-| Tolerance | `1e-6` |
-| Disturbance events | None for this first run |
+| RMS option | Workshop setting                      |
+|---|---------------------------------------|
+| Simulation time | 30 s                                  |
+| Time step | 0.002 s                               |
+| Integration method | DAE Backward Euler (`implicit euler`) |
+| Initialization method | Explicit                              |
+| Tolerance | `1e-6`                                |
+| Disturbance events | None for this first run               |
 
 Set the tolerance explicitly to `1e-6`; if the GUI uses a decimal-precision selector, choose **6**. Use these same numerical settings for both RMS runs so their responses can be compared. Backward Euler integrates the coupled differential and algebraic equations of the controllers and network.
 
@@ -541,6 +569,7 @@ We will reduce **VSC2's dynamic Pref** from **0.20 to 0.19 p.u. at t = 5 s**. In
 1. Select **VSC 2** and use its context-menu action to add an **RMS event**.
 2. Create or select the event group, and choose the VSC2 dynamic `P_ref` parameter.
 3. Enter `time = 5.0`, `value = 0.19` and `Step`. If an end-time field is shown for the step, leave it equal to `5.0`.
+   ![Add RMS event](pics/add_rms_events_group.png)
 4. Inspect the saved record under **Database → Dynamic → RMS Event** and its **RMS Events Group**.
 5. Confirm that the group contains **only this one event** and save the circuit.
 
@@ -549,6 +578,54 @@ We will reduce **VSC2's dynamic Pref** from **0.20 to 0.19 p.u. at t = 5 s**. In
 Pref(t) = 0.20 p.u.   for t < 5 s
 Pref(t) = 0.19 p.u.   for t >= 5 s
 ```
+
+### 8.2. Run RMS again and compare
+
+1. Keep the numerical settings from Section 7.2 and include the `HVDC RMS Vdc control` event group in the RMS study.
+2. Run **RMS simulation** again from the original power-flow operating point.
+3. Check initialization, convergence and the log again. Select the result set for the intended event group.
+4. Compare with the saved baseline: the trajectories should agree before 5 s, then show the response to the reference change.
+5. Check VSC2's power tracking, VSC1's DC-voltage regulation and the DC-line current response using Section 10.
+
+The second run starts at `t = 0`; it does not continue from the end of the first run. The reference remains at `0.19 p.u.` after the event for the rest of this simulation.
+
+## 9. Small-Signal RMS analysis
+
+After comparing the two RMS runs, run **Small-Signal RMS** to inspect the local modes of the assembled dynamic model.
+
+### 9.1. Select the operating point and run
+
+1. Keep the completed RMS models and a converged Power Flow for the original **20 MW** operating point.
+2. Set the RMS Small-Signal **assessment time to `0.0 s`** for this exercise. This selects the initialized equilibrium used before the event.
+3. Select **Small-Signal RMS** (RMS Small-Signal stability analysis), not the EMT Small-Signal study, and run it.
+4. Inspect the study log and open **Results → RMS Small-Signal stability**.
+
+Running this study after the disturbed RMS simulation does **not** automatically linearize its final, 19 MW state. With assessment time zero, the analysis is around the initial power-flow equilibrium. Studying a different equilibrium would require setting and solving that operating point explicitly; it is outside this session's required sequence.
+
+### 9.2. Read the modal results
+
+| Result | What to inspect |
+|---|---|
+| Eigenvalues | Real parts indicate growth or decay; imaginary parts indicate oscillation |
+| Oscillation frequencies | Identify the time scales of oscillatory modes |
+| Damping ratios | Identify the least damped oscillatory modes |
+| Participation factors | Identify which states contribute most strongly to a selected mode |
+
+For a mode `lambda = sigma + j*omega`, a negative `sigma` means decay and a positive `sigma` means growth in the linearized model. The oscillation frequency is `abs(omega)/(2*pi)` Hz. Near-zero modes need interpretation in the context of references and constraints rather than an automatic stable/unstable label.
+
+Select a weakly damped mode and inspect whether its participating states belong to a PLL, an outer control loop, an inner current loop, a DC-link capacitor or the DC-line current. Relate the modes to the transients seen in the event run, remembering that a small event may not visibly excite every mode. Record the results obtained; do not assume stability from a successful solver status alone.
+
+### 10 Complete vsc1 model using dynamic editor
+1. Open **HVDC_grid_noPLL.veragrid**
+1. Open VSC1's rms dynamic editor using the context menu
+2. Ctrl + click on the **HVDC GFL VSC explicit PI** block to enter the model.
+3. Ctrl + click on the **GFL_converter_explicit_PI** block to enter the model.
+4. Drag and drop the **PLL explicit PI** model from the **Library → Control blocks** to the scene.
+5. **Synchronize:** connect `HVDC_GFL_VSC_explicit_PI.Vm` and `HVDC_GFL_VSC_explicit_PI.Va` to the PLL, then PLL outputs `vd`, `vq`, `omega` to the converter electrical-equations block.
+
+   ![HVDC GFL VSC explicit PI blocks model](pics/complete_vsc1_model_with_pll.png)
+
+### 11 Try adding different events
 
 We will increase **VSC2's dynamic Qref** from **0.0 to 0.02 p.u. at t = 5 s**. In the saved model the parameter is named **`Q_ref`**. Select that dynamic parameter.
 
@@ -629,15 +706,6 @@ Vg(t) = 1.0 p.u.   for t >= 5.2 s
 
 The event value is the **new absolute reference**, not the increment `-0.01`. On the 100 MVA base this is a reduction from 20 MW to 19 MW. Leave the static `Pdc` set point at **20 MW** to preserve the initial operating point. There is **no return step at 15 s** in this session.
 
-### 8.2. Run RMS again and compare
-
-1. Keep the numerical settings from Section 7.2 and include the `HVDC RMS Vdc control` event group in the RMS study.
-2. Run **RMS simulation** again from the original power-flow operating point.
-3. Check initialization, convergence and the log again. Select the result set for the intended event group.
-4. Compare with the saved baseline: the trajectories should agree before 5 s, then show the response to the reference change.
-5. Check VSC2's power tracking, VSC1's DC-voltage regulation and the DC-line current response using Section 10.
-
-The second run starts at `t = 0`; it does not continue from the end of the first run. The reference remains at `0.19 p.u.` after the event for the rest of this simulation.
 
 ## 9. Small-Signal RMS analysis
 
