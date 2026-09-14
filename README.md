@@ -58,8 +58,8 @@ On the workshop day we’ll provide:
 * a seat number
 
 **Steps**
-1. Open the link we provide (e.g., `https://<WORKSHOP URL>/seatX/`) in Chrome/Firefox, doubleclick in the seat number provided in Veragrid Workshop Room Selection. Ennter your name to register.
-![noVNC](pics/virtual_machine_room.png)
+1. Open the link we provide (e.g., `https://<WORKSHOP URL>/seatX/`) in Chrome/Firefox, doubleclick in the seat number provided in Veragrid Workshop Room Selection. Enter your name to register.
+![noVNC](pics/VMVeragrid.png)
 
    ```bash
    veragrid
@@ -69,5 +69,5 @@ On the workshop day we’ll provide:
 **Notes**
 
 * We’ll share your exact seat at the start of the session.
-* If the browser page looks idle/blank, refresh the page and re-enter the password.
+* If the browser page looks idle/blank, refresh the page. If you need to restart, ask the speakers to reset your room.
 * All you need is a modern browser; no local Python install required.
